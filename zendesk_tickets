@@ -2,7 +2,7 @@
 
 '''
 @author: Viktor Petersson
-Munin-plugin for plotting data from Zendesk. Includes code from Adam Panzer.
+For the latest version, visit https://github.com/vpetersson/munin_zendesk
 '''
 
 import pycurl, cStringIO, json, sys, os
@@ -88,11 +88,11 @@ else:
                 ticketsSolved += 1
     
         # Report the result
-        print 'total_open.value: ' + str(ticketsOpen)
-        print 'total_closed.value: ' + str(ticketsClosed)
-        print 'total_new.value: ' + str(ticketsNew)
-        print 'total_pending.value: ' + str(ticketsPending)
-        print 'total_solved.value: ' + str(ticketsSolved)
+        print 'total_open.value ' + str(ticketsOpen)
+        print 'total_closed.value ' + str(ticketsClosed)
+        print 'total_new.value ' + str(ticketsNew)
+        print 'total_pending.value ' + str(ticketsPending)
+        print 'total_solved.value ' + str(ticketsSolved)
 
     except:
         print 'Unable to connect to Zendesk.'

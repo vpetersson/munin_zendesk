@@ -1,7 +1,11 @@
 munin_zendesk
 =============
 
-munin_zendesk is a munin-plugin to plot Zendesk statistics. There are currently two plugins: 
+# About
+
+munin_zendesk is a munin-plugin for plotting Zendesk statistics written by [Viktor Petersson](http://viktorpetersson.com/).
+
+There are currently two plugins: 
 
  * zendesk_tickets
   * This plugin plots the number of tickets in the system (and their state)
@@ -32,14 +36,12 @@ CNAME points to (ie. foobar.zendesk.com).
 
 ## Example
 
-`
-[zendesk_*]
-env.credentials me@domain.com/token:abc123
-env.subdomain myawesomeproduct
-`
+`[zendesk_*]`
+`env.credentials me@domain.com/token:abc123`
+`env.subdomain myawesomeproduct`
 
 
+# Credits
 
-
-
+Thanks to [Adam Panzer](https://github.com/apanzerj), who wrote the [sample code](https://support.zendesk.com/entries/21457528-using-python-with-the-zendesk-api) for interacting with Zendesk's API.
 
