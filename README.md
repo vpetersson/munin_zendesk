@@ -37,7 +37,9 @@ CNAME points to (ie. foobar.zendesk.com).
 ## Example
 
 `[zendesk_*]`
+
 `env.credentials me@domain.com/token:abc123`
+
 `env.subdomain myawesomeproduct`
 
 
