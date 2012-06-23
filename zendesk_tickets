@@ -5,10 +5,10 @@
 For the latest version, visit https://github.com/vpetersson/munin_zendesk
 '''
 
-import pycurl, cStringIO, json, sys, os
+import pycurl, cStringIO, json, sys, os, pickle
 
-credentials = os.environ['credentials']
-subdomain = os.environ['subdomain']
+credentials = 
+subdomain = 
 
 def pyCurlWrap(pUrl, meth, data):
     buf = cStringIO.StringIO()
@@ -48,7 +48,9 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     print 'total_solved.type GAUGE'
     print 'graph_args --base 1000'
 
-else:
+# Retreive the real data
+elif len(sys.argv) == 2 and sys.argv[1] == "refreshcache":
+
     # Define variables
     allTickets = []
     ticketsOpen = 0
@@ -56,6 +58,8 @@ else:
     ticketsNew = 0
     ticketsPending = 0
     ticketsSolved = 0
+    
+    localcache = open('/tmp/zendesk_tickets.pkl', 'wb')
     
     try:
         query = json.loads(pyCurlWrap("https://"+str(subdomain)+".zendesk.com/api/v2/tickets.json", "GET", "null"))
@@ -86,13 +90,30 @@ else:
                 ticketsPending += 1
             elif i['status'] == 'solved':
                 ticketsSolved += 1
-    
-        # Report the result
-        print 'total_open.value ' + str(ticketsOpen)
-        print 'total_closed.value ' + str(ticketsClosed)
-        print 'total_new.value ' + str(ticketsNew)
-        print 'total_pending.value ' + str(ticketsPending)
-        print 'total_solved.value ' + str(ticketsSolved)
+                
+        # Gather the result and write them to the cache
+        result  = { 'ticketsOpen' : ticketsOpen, 'ticketsClosed' : ticketsClosed, 'ticketsNew' : ticketsNew, 'ticketsPending' : ticketsPending, 'ticketsSolved' : ticketsSolved}
+        pickle.dump(result, localcache)
+        localcache.close()
 
     except:
         print 'Unable to connect to Zendesk.'
+
+else:
+    # Fetch the result from the local cache
+    localcache = open('/tmp/zendesk_tickets.pkl', 'rb')
+    result = pickle.load(localcache)
+    ticketsOpen = result['ticketsOpen']
+    ticketsClosed = result['ticketsClosed']
+    ticketsNew = result['ticketsNew']
+    ticketsPending = result['ticketsPending']
+    ticketsSolved = result['ticketsSolved']
+    localcache.close()
+        
+    # Report the result
+    print 'total_open.value ' + str(ticketsOpen)
+    print 'total_closed.value ' + str(ticketsClosed)
+    print 'total_new.value ' + str(ticketsNew)
+    print 'total_pending.value ' + str(ticketsPending)
+    print 'total_solved.value ' + str(ticketsSolved)
+

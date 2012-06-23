@@ -5,10 +5,10 @@
 For the latest version, visit https://github.com/vpetersson/munin_zendesk
 '''
 
-import pycurl, cStringIO, json, sys, os
+import pycurl, cStringIO, json, sys, os, pickle
 
-credentials = os.environ['credentials']
-subdomain = os.environ['subdomain']
+credentials = 
+subdomain = 
 
 def pyCurlWrap(pUrl, meth, data):
     buf = cStringIO.StringIO()
@@ -42,11 +42,14 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     print 'total_good.type GAUGE'
     print 'graph_args --base 1000'
 
-else:
+# Retreive the real data
+elif len(sys.argv) == 2 and sys.argv[1] == "refreshcache":
     # Define variables
     allTickets = []
     ticketsGood = 0
     ticketsBad = 0
+
+    localcache = open('/tmp/zendesk_satisfaction.pkl', 'wb')
     
     try:
         query = json.loads(pyCurlWrap("https://"+str(subdomain)+".zendesk.com/api/v2/satisfaction_ratings.json", "GET", "null"))
@@ -71,10 +74,24 @@ else:
                 ticketsGood += 1
             elif i['score'] == 'bad':
                 ticketsBad += 1
-    
-        # Report the result
-        print 'total_good.value ' + str(ticketsGood)
-        print 'total_bad.value ' + str(ticketsBad)
-
+        
+        # Gather the result and write them to the cache
+        result  = { 'ticketsGood' : ticketsGood, 'ticketsBad' : ticketsBad }
+        pickle.dump(result, localcache)
+        localcache.close()
+        
     except:
-        print 'Unable to connect to Zendesk.'
+            print 'Unable to connect to Zendesk.'
+    
+else:
+   # Fetch the result from the local cache
+   localcache = open('/tmp/zendesk_satisfaction.pkl', 'rb')
+   result = pickle.load(localcache)
+   ticketsGood = result['ticketsGood']
+   ticketsBad = result['ticketsBad']
+   localcache.close()
+   
+   # Report the result
+   print 'total_good.value ' + str(ticketsGood)
+   print 'total_bad.value ' + str(ticketsBad)
+
