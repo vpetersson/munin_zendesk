@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+'''
+@author: Viktor Petersson
+Munin-plugin for plotting data from Zendesk. Includes code from Adam Panzer.
+'''
+
+import pycurl, cStringIO, json, sys, os
+
+credentials = os.environ['credentials']
+subdomain = os.environ['subdomain']
+
+def pyCurlWrap(pUrl, meth, data):
+    buf = cStringIO.StringIO()
+    c=pycurl.Curl()
+    c.setopt(c.URL, pUrl);
+    c.setopt(c.WRITEFUNCTION, buf.write)
+    c.setopt(c.CONNECTTIMEOUT, 5)
+    c.setopt(c.TIMEOUT, 8)
+    if not data == "null":
+        c.setopt(c.POSTFIELDS, data)
+    c.setopt(c.FOLLOWLOCATION, True)
+    c.setopt(c.MAXREDIRS, 10)
+    c.setopt(c.USERPWD, credentials)
+    c.setopt(c.CUSTOMREQUEST, meth)
+    c.setopt(c.HTTPHEADER, ['Content-type: application/json'])
+    c.perform()
+    result = buf.getvalue()
+    buf.close()
+    return result;
+
+if len(sys.argv) == 2 and sys.argv[1] == "autoconf":
+    print 'yes'
+
+elif len(sys.argv) == 2 and sys.argv[1] == "config":
+    print 'graph_title Zendesk Satisfaction'
+    print 'graph_vlabel count'
+    print 'graph_category zendesk'
+    print 'total_good.label Unsatisfied Users'
+    print 'total_good.type GAUGE'
+    print 'total_good.label Satisfied Users'
+    print 'total_good.type GAUGE'
+    print 'graph_args --base 1000'
+
+else:
+    # Define variables
+    allTickets = []
+    ticketsGood = 0
+    ticketsBad = 0
+    
+    try:
+        query = json.loads(pyCurlWrap("https://"+str(subdomain)+".zendesk.com/api/v2/satisfaction_ratings.json", "GET", "null"))
+        if query == "Couldn't authenticate you":
+            print 'Zendesk rejected your credentials.'
+            exit
+            
+        # Ops, there's another page with tickets. Let's keep fetching.
+        while query['next_page'] != None:
+            fetchMore = json.loads(pyCurlWrap(str(query['next_page']), "GET", "null"))
+            allTickets += fetchMore['satisfaction_ratings']
+            query = fetchMore
+                
+            if allTickets:
+                score = allTickets
+            else:
+                score =  query['satisfaction_ratings']
+        
+        # Do the math
+        for i in score:
+            if i['score'] == 'good':
+                ticketsGood += 1
+            elif i['score'] == 'bad':
+                ticketsBad += 1
+    
+        # Report the result
+        print 'total_good.value: ' + str(ticketsGood)
+        print 'total_bad.value: ' + str(ticketsBad)
+
+    except:
+        print 'Unable to connect to Zendesk.'
