@@ -38,8 +38,6 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
     print 'graph_category zendesk'
     print 'total_open.label Open Tickets'
     print 'total_open.type GAUGE'
-    print 'total_closed.label Closed Tickets'
-    print 'total_closed.type GAUGE'
     print 'total_new.label New Tickets'
     print 'total_new.type GAUGE'    
     print 'total_pending.label Pending Tickets'
@@ -104,7 +102,6 @@ else:
     localcache = open('/tmp/zendesk_tickets.pkl', 'rb')
     result = pickle.load(localcache)
     ticketsOpen = result['ticketsOpen']
-    ticketsClosed = result['ticketsClosed']
     ticketsNew = result['ticketsNew']
     ticketsPending = result['ticketsPending']
     ticketsSolved = result['ticketsSolved']
@@ -112,7 +109,6 @@ else:
         
     # Report the result
     print 'total_open.value ' + str(ticketsOpen)
-    print 'total_closed.value ' + str(ticketsClosed)
     print 'total_new.value ' + str(ticketsNew)
     print 'total_pending.value ' + str(ticketsPending)
     print 'total_solved.value ' + str(ticketsSolved)

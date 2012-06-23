@@ -2,10 +2,13 @@
 
 munin_zendesk is a munin-plugin collection for plotting Zendesk statistics written by [Viktor Petersson](http://viktorpetersson.com/).
 
-There are currently two plugins: 
+There are currently three plugins: 
 
  * zendesk_tickets
   * This plugin plots the number of tickets in the system (and their state)
+ * zendesk_closedtickets
+  * I broke out closed tickets from the above plugin, as it was by nature several orders of magnitudes larger than the other states, and hence ruined the graph.
+  * Consider this a sub-plugin to zendesk_tickets. It doesn't require any 'refreshcache' as it shares cache.
  * zendesk_satisfaction
   * This plugin plots the satisfaction of tickets (bad/good)
 
