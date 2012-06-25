@@ -7,7 +7,7 @@ For the latest version, visit https://github.com/vpetersson/munin_zendesk
 This plugin depends on zendesk_tickets for data.
 '''
 
-importjson, sys, os, pickle
+import json, sys, os, pickle
 
 
 if len(sys.argv) == 2 and sys.argv[1] == "autoconf":
