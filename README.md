@@ -42,6 +42,8 @@ You need to configure two values in each file:
 
  * credentials
  * subdomain
+ 
+Make sure that you quote both strings (i.e. *subdomain = "mydomain"*, otherwise Python will not interpret the value as a string)
 
 ### Credentials
 
@@ -49,7 +51,7 @@ For authentication, you can either authenticate with your username/password, use
 To enable token-authentication, visit http://[yoursubdomain].zendesk.com/settings/api
 
 For token:
-`email/token:[token]`
+`you@domain.com/token:[token]`
 
 For username/password:
 `you@domain.com:password`
