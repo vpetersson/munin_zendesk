@@ -43,7 +43,7 @@ You need to configure two values in each file:
  * credentials
  * subdomain
  
-Make sure that you quote both strings (i.e. *subdomain = "mydomain"*, otherwise Python will not interpret the value as a string)
+Make sure that you quote both strings (i.e. *subdomain = "mydomain"*), otherwise Python will not interpret the value as a string.
 
 ### Credentials
 
