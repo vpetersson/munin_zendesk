@@ -27,3 +27,8 @@ pip-log.txt
 .mr.developer.cfg
 munin-node
 .swp
+
+/.zendesk_tickets.swp
+/.zendesk_satisfaction.swp
+/.zendesk_closedtickets.swp
+/.README.md.swp
