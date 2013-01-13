@@ -62,9 +62,9 @@ CNAME points to (ie. foobar.zendesk.com).
 
 Here's a sample of how the entry in munin-node/plugins.conf may look like:
 
-    [zendesk]
-    username = user@domain.com/token
-    password = abc123
-    subdomain = yoursubdomain
-    cache_folder = /tmp
+    [zendesk_*]
+    zendesk_username = user@domain.com/token
+    zendesk_password = abc123
+    zendesk_subdomain = yoursubdomain
+    zendesk_cache_folder = /tmp
 

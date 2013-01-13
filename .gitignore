@@ -26,9 +26,5 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 munin-node
-.swp
+*.swp
 
-/.zendesk_tickets.swp
-/.zendesk_satisfaction.swp
-/.zendesk_closedtickets.swp
-/.README.md.swp
