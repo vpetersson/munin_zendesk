@@ -17,13 +17,13 @@ if munin_config_file == None:
     
 config = {}
 for line in open(munin_config_file, "r").readlines():
-    if 'zendesk_' in line and '[zendesk_*]' not in line:
+    if 'env.zendesk_' in line:
         data = line.strip('\n').split('=')
         key = data[0].strip()
         value = data[1].strip()
         config[key] = value
 
-username = config['zendesk_username']
-password = config['zendesk_password'] 
-subdomain = config['zendesk_subdomain']
-cache_folder = config['zendesk_cache_folder']
+username = config['env.zendesk_username']
+password = config['env.zendesk_password'] 
+subdomain = config['env.zendesk_subdomain']
+cache_folder = config['env.zendesk_cache_folder']

@@ -27,7 +27,7 @@ Next, you need to install the required Python dependencies. This can be done by 
 
 In addition to the actual-plugins, the plugin also depends a cronjob-entry (see below). 
 
-Once installed, you also need to add the configuration block (see the example) to your Munin plugin-file (*/etc/munin/plugin-conf.d/munin-node* on Ubuntu, and */usr/local/etc/munin/plugin-conf.d/plugins.conf* on FreeBSD).
+Once installed, you also need to add the configuration block (see the example) to your Munin plugin-file ( */etc/munin/plugin-conf.d/munin-node* on Ubuntu, and */usr/local/etc/munin/plugin-conf.d/plugins.conf* on FreeBSD).
 
 Finally, verify that the plugins work by running:
 
@@ -63,8 +63,8 @@ CNAME points to (ie. foobar.zendesk.com).
 Here's a sample of how the entry in munin-node/plugins.conf may look like:
 
     [zendesk_*]
-    zendesk_username = user@domain.com/token
-    zendesk_password = abc123
-    zendesk_subdomain = yoursubdomain
-    zendesk_cache_folder = /tmp
+    env.zendesk_username = user@domain.com/token
+    env.zendesk_password = abc123
+    env.zendesk_subdomain = yoursubdomain
+    env.zendesk_cache_folder = /tmp
 
