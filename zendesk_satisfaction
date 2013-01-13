@@ -5,7 +5,7 @@
 For the latest version, visit https://github.com/vpetersson/munin_zendesk
 '''
 
-import requests, cStringIO, json, sys, os, pickle, zendesk_helper
+import requests, json, sys, os, pickle, zendesk_helper
 
 username = zendesk_helper.username
 password = zendesk_helper.password 
