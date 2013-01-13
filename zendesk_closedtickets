@@ -7,8 +7,10 @@ For the latest version, visit https://github.com/vpetersson/munin_zendesk
 This plugin depends on zendesk_tickets for data.
 '''
 
-import json, sys, os, pickle
+import json, sys, os, pickle, zendesk_helper
 
+cache_folder = zendesk_helper.cache_folder
+cache_file_path = os.path.join(cache_folder, 'zendesk_tickets.pkl')
 
 if len(sys.argv) == 2 and sys.argv[1] == "autoconf":
     print 'yes'
@@ -24,11 +26,11 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 
 else:
     # Fetch the result from the local cache
-    localcache = open('/tmp/zendesk_tickets.pkl', 'rb')
-    result = pickle.load(localcache)
-    ticketsClosed = result['ticketsClosed']
-    localcache.close()
+    cache_file = open(cache_file_path, 'rb')
+    result = pickle.load(cache_file)
+    tickets_closed = result['ticketsClosed']
+    cache_file.close()
         
     # Report the result
-    print 'total_closed.value ' + str(ticketsClosed)
+    print 'total_closed.value ' + str(tickets_closed)
 

@@ -5,29 +5,13 @@
 For the latest version, visit https://github.com/vpetersson/munin_zendesk
 '''
 
-import pycurl, cStringIO, json, sys, os, pickle
+import requests, cStringIO, json, sys, os, pickle, zendesk_helper
 
-credentials = 
-subdomain = 
-
-def pyCurlWrap(pUrl, meth, data):
-    buf = cStringIO.StringIO()
-    c=pycurl.Curl()
-    c.setopt(c.URL, pUrl);
-    c.setopt(c.WRITEFUNCTION, buf.write)
-    c.setopt(c.CONNECTTIMEOUT, 5)
-    c.setopt(c.TIMEOUT, 8)
-    if not data == "null":
-        c.setopt(c.POSTFIELDS, data)
-    c.setopt(c.FOLLOWLOCATION, True)
-    c.setopt(c.MAXREDIRS, 10)
-    c.setopt(c.USERPWD, credentials)
-    c.setopt(c.CUSTOMREQUEST, meth)
-    c.setopt(c.HTTPHEADER, ['Content-type: application/json'])
-    c.perform()
-    result = buf.getvalue()
-    buf.close()
-    return result;
+username = zendesk_helper.username
+password = zendesk_helper.password 
+subdomain = zendesk_helper.subdomain
+cache_folder = zendesk_helper.cache_folder
+cache_file_path = os.path.join(cache_folder, 'zendesk_tickets.pkl')
 
 if len(sys.argv) == 2 and sys.argv[1] == "autoconf":
     print 'yes'
@@ -50,66 +34,67 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 elif len(sys.argv) == 2 and sys.argv[1] == "refreshcache":
 
     # Define variables
-    allTickets = []
+    all_tickets = []
     ticketsOpen = 0
     ticketsClosed = 0
     ticketsNew = 0
     ticketsPending = 0
     ticketsSolved = 0
     
-    localcache = open('/tmp/zendesk_tickets.pkl', 'wb')
+    cache_file = open(cache_file_path, 'wb')
     
-    try:
-        query = json.loads(pyCurlWrap("https://"+str(subdomain)+".zendesk.com/api/v2/tickets.json", "GET", "null"))
-        if query == "Couldn't authenticate you":
-            print 'Zendesk rejected your credentials.'
-            exit
-        
-        # Ops, there's another page with tickets. Let's keep fetching.
-        while query['next_page'] != None:
-            fetchMore = json.loads(pyCurlWrap(str(query['next_page']), "GET", "null"))
-            allTickets += fetchMore['tickets']
-            query = fetchMore
+    tickets = "https://" + str(subdomain) + ".zendesk.com/api/v2/tickets.json"
+    fetch = requests.get(tickets, auth=(username, password))
+    if fetch.status_code != 200:
+        print 'Received non-200 status from Zendesk.'
+        sys.exit(1)
+    result = json.loads(fetch.content)
 
-        if allTickets:
-            tickets = allTickets
-        else:
-            tickets = query['tickets']
+    # Ops, there's another page with tickets. Let's keep fetching.
+    while result['next_page'] != None:
+        fetch_more = requests.get(str(result['next_page']), auth=(username, password))
+        result = json.loads(fetch_more.content)
+        all_tickets += result['tickets']
+
+    if all_tickets:
+        tickets = all_tickets
+    else:
+        tickets = result['tickets']
         
-        # Do the math
-        for i in tickets:
-            if i['status'] == 'open':
-                ticketsOpen += 1
-            elif i['status'] == 'closed':
-                ticketsClosed += 1
-            elif i['status'] == 'new':
-                ticketsNew += 1
-            elif i['status'] == 'pending':
-                ticketsPending += 1
-            elif i['status'] == 'solved':
-                ticketsSolved += 1
+    # Do the math
+    for i in tickets:
+        if i['status'] == 'open':
+            ticketsOpen += 1
+        elif i['status'] == 'closed':
+            ticketsClosed += 1
+        elif i['status'] == 'new':
+            ticketsNew += 1
+        elif i['status'] == 'pending':
+            ticketsPending += 1
+        elif i['status'] == 'solved':
+            ticketsSolved += 1
                 
-        # Gather the result and write them to the cache
-        result  = { 'ticketsOpen' : ticketsOpen, 'ticketsClosed' : ticketsClosed, 'ticketsNew' : ticketsNew, 'ticketsPending' : ticketsPending, 'ticketsSolved' : ticketsSolved}
-        pickle.dump(result, localcache)
-        localcache.close()
-
-    except:
-        print 'Unable to connect to Zendesk.'
+    # Gather the result and write them to the cache
+    result  = { 'ticketsOpen' : ticketsOpen, 'ticketsClosed' : ticketsClosed, 'ticketsNew' : ticketsNew, 'ticketsPending' : ticketsPending, 'ticketsSolved' : ticketsSolved}
+    pickle.dump(result, cache_file)
+    cache_file.close()
 
 else:
     # Fetch the result from the local cache
-    localcache = open('/tmp/zendesk_tickets.pkl', 'rb')
-    result = pickle.load(localcache)
-    ticketsOpen = result['ticketsOpen']
-    ticketsNew = result['ticketsNew']
-    ticketsPending = result['ticketsPending']
-    ticketsSolved = result['ticketsSolved']
-    localcache.close()
+    if os.path.isfile(cache_file_path):
+        cache_file = open(cache_file_path, 'rb')
+        result = pickle.load(cache_file)
+        ticketsOpen = result['ticketsOpen']
+        ticketsNew = result['ticketsNew']
+        ticketsPending = result['ticketsPending']
+        ticketsSolved = result['ticketsSolved']
+        cache_file.close()
         
-    # Report the result
-    print 'total_open.value ' + str(ticketsOpen)
-    print 'total_new.value ' + str(ticketsNew)
-    print 'total_pending.value ' + str(ticketsPending)
-    print 'total_solved.value ' + str(ticketsSolved)
-
+        # Report the result
+        print 'total_open.value ' + str(ticketsOpen)
+        print 'total_new.value ' + str(ticketsNew)
+        print 'total_pending.value ' + str(ticketsPending)
+        print 'total_solved.value ' + str(ticketsSolved)
+    else:
+        print 'No local cache available. Exiting.'
+        sys.exit(1)

@@ -5,29 +5,13 @@
 For the latest version, visit https://github.com/vpetersson/munin_zendesk
 '''
 
-import pycurl, cStringIO, json, sys, os, pickle
+import requests, cStringIO, json, sys, os, pickle, zendesk_helper
 
-credentials = 
-subdomain = 
-
-def pyCurlWrap(pUrl, meth, data):
-    buf = cStringIO.StringIO()
-    c=pycurl.Curl()
-    c.setopt(c.URL, pUrl);
-    c.setopt(c.WRITEFUNCTION, buf.write)
-    c.setopt(c.CONNECTTIMEOUT, 5)
-    c.setopt(c.TIMEOUT, 8)
-    if not data == "null":
-        c.setopt(c.POSTFIELDS, data)
-    c.setopt(c.FOLLOWLOCATION, True)
-    c.setopt(c.MAXREDIRS, 10)
-    c.setopt(c.USERPWD, credentials)
-    c.setopt(c.CUSTOMREQUEST, meth)
-    c.setopt(c.HTTPHEADER, ['Content-type: application/json'])
-    c.perform()
-    result = buf.getvalue()
-    buf.close()
-    return result;
+username = zendesk_helper.username
+password = zendesk_helper.password 
+subdomain = zendesk_helper.subdomain
+cache_folder = zendesk_helper.cache_folder
+cache_file_path = os.path.join(cache_folder, 'zendesk_satisfaction.pkl')
 
 if len(sys.argv) == 2 and sys.argv[1] == "autoconf":
     print 'yes'
@@ -45,53 +29,55 @@ elif len(sys.argv) == 2 and sys.argv[1] == "config":
 # Retreive the real data
 elif len(sys.argv) == 2 and sys.argv[1] == "refreshcache":
     # Define variables
-    allTickets = []
+    all_tickets = []
     ticketsGood = 0
     ticketsBad = 0
 
-    localcache = open('/tmp/zendesk_satisfaction.pkl', 'wb')
+    cache_file = open(cache_file_path, 'wb')
     
-    try:
-        query = json.loads(pyCurlWrap("https://"+str(subdomain)+".zendesk.com/api/v2/satisfaction_ratings.json", "GET", "null"))
-        if query == "Couldn't authenticate you":
-            print 'Zendesk rejected your credentials.'
-            exit
-            
-        # Ops, there's another page with tickets. Let's keep fetching.
-        while query['next_page'] != None:
-            fetchMore = json.loads(pyCurlWrap(str(query['next_page']), "GET", "null"))
-            allTickets += fetchMore['satisfaction_ratings']
-            query = fetchMore
-                
-            if allTickets:
-                score = allTickets
-            else:
-                score =  query['satisfaction_ratings']
-        
-        # Do the math
-        for i in score:
-            if i['score'] == 'good':
-                ticketsGood += 1
-            elif i['score'] == 'bad':
-                ticketsBad += 1
-        
-        # Gather the result and write them to the cache
-        result  = { 'ticketsGood' : ticketsGood, 'ticketsBad' : ticketsBad }
-        pickle.dump(result, localcache)
-        localcache.close()
-        
-    except:
-            print 'Unable to connect to Zendesk.'
-    
-else:
-   # Fetch the result from the local cache
-   localcache = open('/tmp/zendesk_satisfaction.pkl', 'rb')
-   result = pickle.load(localcache)
-   ticketsGood = result['ticketsGood']
-   ticketsBad = result['ticketsBad']
-   localcache.close()
-   
-   # Report the result
-   print 'total_good.value ' + str(ticketsGood)
-   print 'total_bad.value ' + str(ticketsBad)
+    satisfaction = "https://" + str(subdomain) + ".zendesk.com/api/v2/satisfaction_ratings.json"
+    fetch = requests.get(satisfaction, auth=(username, password))
+    if fetch.status_code != 200:
+        print 'Received non-200 status from Zendesk.'
+        sys.exit(1)
+    result = json.loads(fetch.content)
 
+    # Ops, there's another page with tickets. Let's keep fetching.
+    while result['next_page'] != None:
+        fetch_more = requests.get(str(result['next_page']), auth=(username, password))
+        result = json.loads(fetch_more.content)
+        all_tickets += result['satisfaction_ratings']
+
+    if all_tickets:
+        score = all_tickets
+    else:
+        score =  result['satisfaction_ratings']
+        
+    # Do the math
+    for i in score:
+        if i['score'] == 'good':
+            ticketsGood += 1
+        elif i['score'] == 'bad':
+            ticketsBad += 1
+        
+    # Gather the result and write them to the cache
+    result  = { 'ticketsGood' : ticketsGood, 'ticketsBad' : ticketsBad }
+    pickle.dump(result, cache_file)
+    cache_file.close()
+        
+else:
+    # Fetch the result from the local cache
+    if os.path.isfile(cache_file_path):
+        cache_file = open(cache_file_path, 'rb')
+        result = pickle.load(cache_file)
+        ticketsGood = result['ticketsGood']
+        ticketsBad = result['ticketsBad']
+        cache_file.close()
+   
+        # Report the result
+        print 'total_good.value ' + str(ticketsGood)
+        print 'total_bad.value ' + str(ticketsBad)
+
+    else:
+        print 'No local cache available. Exiting.'
+        sys.exit(1)
